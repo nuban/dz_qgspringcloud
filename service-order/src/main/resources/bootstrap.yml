@@ -1,0 +1,11 @@
+server:
+  port: 8000
+
+spring:
+  application:
+    name: service-order
+  cloud:
+    nacos:
+      server-addr: localhost:8848
+      discovery:
+        ephemeral: false
