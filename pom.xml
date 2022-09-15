@@ -6,6 +6,8 @@
 
     <modules>
         <module>service-order</module>
+        <module>service-store</module>
+        <module>service-goods</module>
     </modules>
 
     <parent>

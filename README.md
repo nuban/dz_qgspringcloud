@@ -1,4 +1,5 @@
 ## 第一课 Nacos
+## Nacos服务注册
 ### 版本
 https://github.com/alibaba/spring-cloud-alibaba/wiki/%E7%89%88%E6%9C%AC%E8%AF%B4%E6%98%8E
 
@@ -85,3 +86,26 @@ java.lang.IllegalArgumentException: Param 'serviceName' is illegal, serviceName 
 ```
 
 配置多个启动方式，观察nacos注册中心面板的变化
+
+## Nacos服务治理
+
+> java.net.UnknownHostException: service-store
+
+在微服务调用的时候出现的，意思是找不到服务
+
+添加loadBalance：
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+</dependency>
+```
+
+注册 RestTemplate:
+```java
+@LoadBalanced
+@Bean
+public RestTemplate restTemplate() {
+    return new RestTemplate();
+}
+```
