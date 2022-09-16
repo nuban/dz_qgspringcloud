@@ -138,7 +138,7 @@ public RestTemplate restTemplate() {
 在Controller上面加上@RefreshScope
 
 ### dataID格式
-${prefix}-${spring.profiles.active}.${file-extension}
+`${prefix}-${spring.profiles.active}.${file-extension}`
 
 ### Group分组
 
