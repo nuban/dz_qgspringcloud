@@ -9,3 +9,7 @@ spring:
       server-addr: localhost:8848
       discovery:
         ephemeral: false
+      config:
+        server-addr:  localhost:8848
+        file-extension: yaml
+        group: goods

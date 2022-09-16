@@ -3,10 +3,12 @@ package com.example.goods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,10 +34,28 @@ public class GoodsApplication {
 
     @RestController
     @RequestMapping("/goods")
+    @RefreshScope
     class GoodsController {
 
         @Autowired
         RestTemplate restTemplate;
+
+        @Value("${env.name:}")
+        String envName;
+        @Value("${env.ip:}")
+        String envIp;
+        @Value("${goods.name:}")
+        String goodsName;
+
+        @GetMapping("/config")
+        public String getConfig() {
+            return "当前读取到的环境名称：" + envName + ", IP: " + envIp;
+        }
+
+        @GetMapping("/config/store")
+        public String getStoreConfig() {
+            return "当前读取到的商品名称：" + goodsName;
+        }
 
         @GetMapping("/{skuID}")
         public GoodsSkuDTO getGoodsInfo(@PathVariable String skuID) throws JsonProcessingException {

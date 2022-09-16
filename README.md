@@ -109,3 +109,47 @@ public RestTemplate restTemplate() {
     return new RestTemplate();
 }
 ```
+
+注册失败错误
+> com.alibaba.nacos.api.exception.NacosException: failed to req API:/nacos/v1/ns/instance after all servers
+
+重启nacos即可
+
+## Nacos配置中心
+
+> java.lang.IllegalArgumentException: Could not resolve placeholder 'env.ip' in value "${env.ip}"
+
+出现这个错误是因为配置项不存在，那么我们应该给与一个默认值,在配置后面输入一个 : 类似于 ${env:ip:},那么久摩尔恩了一个空的字符串
+
+![img.png](files/img.png)
+### 基本配置
+数据库配置：nacos/conf/application.properties  可以进行数据库的配置
+- spring.datasource.platform=mysql
+- db.num=1
+- db.url.0=jdbc:mysql://127.0.0.1:3306/nacos?characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC
+- db.user.0=root
+- db.password.0=123456
+
+配置完成之后，新建数据库nacos，导入数据文件 nacos-mysql.sql
+
+重启nacos
+
+### 动态刷新
+在Controller上面加上@RefreshScope
+
+### dataID格式
+${prefix}-${spring.profiles.active}.${file-extension}
+
+### Group分组
+
+
+### Namespace
+
+namespace里面可以写多个dataID的文件，通过 spring.profile.active 可以区分不同的配置文件
+
+`namespace - group - active` 可以组合出很多种配置
+
+> 注意：在固定的服务里面， prefix必须是当前服务的名称，比如 service-goods，如果prefix改成其他的服务名称，则读取不到配置值
+
+### 共享配置 shared-configs[0]
+### extension-configs
