@@ -142,6 +142,7 @@ public RestTemplate restTemplate() {
 
 ### Group分组
 
+配置 group，可以将业务类似的配置文件归为一组
 
 ### Namespace
 
