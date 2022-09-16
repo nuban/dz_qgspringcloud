@@ -119,7 +119,7 @@ public RestTemplate restTemplate() {
 
 > java.lang.IllegalArgumentException: Could not resolve placeholder 'env.ip' in value "${env.ip}"
 
-出现这个错误是因为配置项不存在，那么我们应该给与一个默认值,在配置后面输入一个 : 类似于 ${env:ip:},那么久摩尔恩了一个空的字符串
+出现这个错误是因为配置项不存在，那么我们应该给与一个默认值,在配置后面输入一个 : 类似于 ${env:ip:},那么就默认了一个空的字符串
 
 ![img.png](files/img.png)
 ### 基本配置
