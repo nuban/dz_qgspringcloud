@@ -154,3 +154,196 @@ namespace里面可以写多个dataID的文件，通过 spring.profile.active 可
 
 ### 共享配置 shared-configs[0]
 ### extension-configs
+
+## Openfeign远程调用
+
+### 集成方式
+```xml
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-openfeign</artifactId>
+</dependency>
+```
+
+启动类加上注解：`@EnableFeignClients`
+
+FeignConfig
+```java
+import feign.Feign;
+import feign.Logger;
+import feign.Retryer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.concurrent.TimeUnit;
+
+@ConditionalOnClass(Feign.class)
+@ConfigurationProperties("feign.httpclient.enable")
+@Configuration
+public class FeignConfig {
+
+   
+
+    /**
+     * NONE：默认的，不显示任何日志;
+     * BASIC：仅记录请求方法、URL、响应状态码及执行时间;
+     * HEADERS：除了BASIC中定义的信息之外，还有请求和响应的头信息;
+     * FULL：除了HEADERS中定义的信息之外，还有请求和响应的正文及元数据。
+     */
+    @Bean
+    Logger.Level feignLoggerLevel() {
+        return Logger.Level.FULL;
+    }
+
+}
+```
+### 重试机制
+
+```java
+ /**
+     * 创建重试器 （重试周期（50毫秒），最大重试周期（2000毫秒），最多尝试次数 3次 ）
+     * feign没有采用线性的重试机制而是采用的是一种指数级（乘法）的重试机制 每次重试时间  当前重试时间*= 1.5
+     * @FeignClient(configuration = FeignConfig.class) 进行配置
+     */
+    @Bean
+    public Retryer retryer() {
+        return new Retryer.Default(50, TimeUnit.SECONDS.toMillis(2), 3);
+    }
+```
+### 超时时间设置
+
+错误示范：
+> Failed to bind properties under 'feign.client.config.connecttimeout' to org.springframework.cloud.openfeign.FeignClientProperties$FeignClientConfiguration:
+> Reason: No converter found capable of converting from type [java.lang.Integer] to type [org.springframework.cloud.openfeign.FeignClientProperties$FeignClientConfiguration]
+
+```yaml
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000  #指的是建立连接所用的时间，适用于网络状况正常的情况下,两端连接所用的时间
+        readTimeout: 5000   #指的是建立连接后从服务器读取到可用资源所用的时间
+```
+
+### 日志增强
+
+```java
+@Component
+@Configuration
+public class FeignConfig {
+
+    /** NONE：默认的，不显示任何日志;
+     * BASIC：仅记录请求方法、URL、响应状态码及执行时间;
+     * HEADERS：除了BASIC中定义的信息之外，还有请求和响应的头信息;
+     * FULL：除了HEADERS中定义的信息之外，还有请求和响应的正文及元数据。
+     */
+    @Bean
+    Logger.Level feignLoggerLevel() {
+        return Logger.Level.FULL;
+    }
+
+}
+```
+
+### 使用Okhttp
+- 支持 HTTP/2 协议。
+- 允许连接到同一个主机地址的所有请求，提高请求效率。
+- 共享Socket，减少对服务器的请求次数。
+- 通过连接池，减少了请求延迟。
+- 缓存响应数据来减少重复的网络请求。
+- 减少了对数据流量的消耗。
+- 自动处理GZip压缩。
+
+```xml
+<dependency>
+    <groupId>io.github.openfeign</groupId>
+    <artifactId>feign-okhttp</artifactId>
+</dependency>
+```
+
+```yaml
+feign:
+    httpclient:
+        enabled: false
+      okhttp:
+        enabled: true
+```
+
+FeignOkhttpConfig
+```java
+@Configuration
+@ConditionalOnClass({OkHttpClient.class})
+@ConditionalOnProperty({"feign.okhttp.enabled"})
+public class FeignOkhttpConfig {
+
+    @Bean
+    public okhttp3.OkHttpClient okHttpClient(OkhttpProperties okhttpProperties) {
+        return new okhttp3.OkHttpClient.Builder()
+                //设置连接超时
+                .connectTimeout(okhttpProperties.getConnectTimeout(), TimeUnit.MILLISECONDS)
+                //设置读超时
+                .readTimeout(okhttpProperties.getReadTimeout(), TimeUnit.MILLISECONDS)
+                //是否自动重连
+                .retryOnConnectionFailure(true)
+                .connectionPool(new ConnectionPool())
+                .addInterceptor(new OkHttpLogInterceptor())
+                //构建OkHttpClient对象
+                .build();
+    }
+}
+```
+
+OkhttpProperties
+```java
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Data
+@Component
+@ConfigurationProperties(prefix = "feign.okhttp")
+public class OkhttpProperties {
+
+    private Long connectTimeout;
+    private Long readTimeout;
+
+}
+```
+
+OkHttpLogInterceptor
+
+```java
+import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.Interceptor;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+
+import java.io.IOException;
+
+@Slf4j
+public class OkHttpLogInterceptor implements Interceptor {
+    @Override
+    public Response intercept(Interceptor.Chain chain) throws IOException {
+        //这个chain里面包含了request和response，所以你要什么都可以从这里拿
+        Request request = chain.request();
+        long t1 = System.nanoTime();//请求发起的时间
+        log.info(String.format("发送请求 %s on %s%n%s",
+                request.url(), chain.connection(), request.headers()));
+        Response response = chain.proceed(request);
+        long t2 = System.nanoTime();//收到响应的时间
+        //注意这里不能直接使用response.body().string()的方式输出日志
+        //因为response.body().string()之后，response中的流会被关闭，程序会报错，我们需要创建出一个新的response给应用层处理
+        ResponseBody responseBody = response.peekBody(1024 * 1024);
+        log.info(String.format("接收响应: [%s] %n返回json:【%s】 %.1fms%n%s",
+                response.request().url(),
+                responseBody.string(),
+                (t2 - t1) / 1e6d,
+                response.headers()));
+        return response;
+    }
+}
+```

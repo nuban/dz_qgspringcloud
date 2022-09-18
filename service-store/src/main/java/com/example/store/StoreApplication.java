@@ -27,11 +27,13 @@ public class StoreApplication {
         String port;
 
         @GetMapping("/{skuID}")
-        public Map<String, Object> getStoreNum(@PathVariable String skuID) {
+        public Map<String, Object> getStoreNum(@PathVariable String skuID) throws InterruptedException {
             System.out.println("当前正在请求服务：" + port + "，参数：" + skuID);
             Map<String, Object> map = new HashMap<>();
             map.put("port", port);
             map.put("num", 100L);
+
+//            Thread.sleep(50000);
             return map;
         }
     }

@@ -13,3 +13,21 @@ spring:
         server-addr:  localhost:8848
         file-extension: yaml
         group: goods
+
+
+logging:
+  level:
+    com.example.goods.feign: debug
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout:  2000 # 连接超时时间
+        readTimeout: 2000  # 接口数据请求的超时时间
+  httpclient:
+    enabled: false
+  okhttp:
+    enabled: true
+    connectTimeout: 4000
+    readTimeout: 3000
